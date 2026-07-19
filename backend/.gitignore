@@ -1,5 +1,7 @@
 .env
 leads.db
+# arquivos temporários do SQLite em modo WAL - também contêm dados de leads
+leads.db-*
 saidas/
 __pycache__/
 *.pyc
