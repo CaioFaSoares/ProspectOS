@@ -3,7 +3,11 @@
 #   .\buscar.ps1
 # (antes, edite o arquivo queries.txt com o nicho + cidade que você quer buscar)
 
-$env:PLAYWRIGHT_NODEJS_PATH = "C:\Program Files\nodejs\node.exe"
+# Caminho do Node usado pelo Playwright embutido no scraper. Se o seu Node estiver
+# em outro lugar, defina a variável de ambiente antes de rodar o script.
+if (-not $env:PLAYWRIGHT_NODEJS_PATH) {
+    $env:PLAYWRIGHT_NODEJS_PATH = "C:\Program Files\nodejs\node.exe"
+}
 
 $data = Get-Date -Format "yyyy-MM-dd_HHmmss"
 $arquivoBruto = "saidas\bruto_$data.csv"

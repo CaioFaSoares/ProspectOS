@@ -1,3 +1,7 @@
 logs/
 *.log
 .DS_Store
+# proteção extra: nenhum .env em nenhuma pasta deve entrar no repositório
+.env
+# artefatos de ferramentas de navegador/screenshot usados no desenvolvimento
+.playwright-mcp/
