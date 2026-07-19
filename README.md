@@ -6,8 +6,12 @@
 
 ### Prospecção de leads no piloto automático: do Google Maps e Instagram direto pro seu CRM
 
-Raspe, filtre, priorize e acompanhe leads de pequenos negócios locais que ainda não têm site, tudo num CRM visual com IA integrada.
+Encontre pequenos negócios locais **sem site ou com site ruim**, receba a estratégia
+de abordagem e a mensagem prontas por IA, gere um diagnóstico em PDF e acompanhe tudo
+num CRM visual — do primeiro contato ao fechamento.
 
+![Version](https://img.shields.io/badge/version-2.0.0-107a4a)
+![Tests](https://img.shields.io/badge/tests-230%20passing-22c55e)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![Flask](https://img.shields.io/badge/Flask-3.1-000000?logo=flask&logoColor=white)
 ![SQLite](https://img.shields.io/badge/SQLite-003B57?logo=sqlite&logoColor=white)
@@ -48,18 +52,18 @@ Raspe, filtre, priorize e acompanhe leads de pequenos negócios locais que ainda
 
 ## 🎯 O que é
 
-**ProspectOS** é uma ferramenta pessoal e educacional de prospecção de leads para quem vende sites, landing pages ou qualquer serviço digital para pequenos negócios locais.
+**ProspectOS** é uma ferramenta de prospecção de leads para quem vende sites, landing pages ou serviços digitais para pequenos negócios locais.
 
-Ela resolve um problema bem específico: encontrar empresas que **ainda não têm site**, sem precisar caçar uma por uma manualmente. O ProspectOS varre o **Google Maps** por nicho + cidade e os **comentários de posts do Instagram**, filtra quem não tem presença digital, organiza tudo num mini-CRM com funil visual (Kanban incluso) e ainda ajuda a escrever a mensagem de abordagem usando IA.
+Ela resolve um problema específico de ponta a ponta: encontrar empresas que **precisam de um site** e transformá-las em conversas de venda. O ProspectOS varre o **Google Maps** (por nicho + cidade, ou por pino e raio num mapa) e os **comentários de posts do Instagram**, **analisa o site de cada empresa** para separar quem não tem site de quem tem um site ruim/lento/inseguro, prioriza por um score, e para cada lead entrega a **estratégia de abordagem**, a **mensagem pronta por IA** e um **diagnóstico em PDF** para mandar no WhatsApp — tudo num CRM visual com funil, follow-up e analytics.
 
 **Para quem é:**
 - Freelancers e agências de web design/landing pages que fazem a própria prospecção
-- Devs e estudantes que querem aprender scraping, integração com IA e um CRM full-stack na prática
+- Devs e estudantes que querem estudar scraping, integração com IA e um CRM full-stack na prática
 - Qualquer pessoa curiosa sobre como automatizar geração de leads locais
 
-**Por que foi criado:** nasceu como ferramenta pessoal para simplificar um processo manual e repetitivo (abrir o Maps, checar site por site, anotar em planilha). Virou um projeto completo o suficiente para valer a pena abrir o código.
+**Por que foi criado:** nasceu como ferramenta pessoal para simplificar um processo manual e repetitivo (abrir o Maps, checar site por site, anotar em planilha) e cresceu até virar uma ferramenta de prospecção completa. É uma base de código real e funcional, aberta para você aprender, adaptar e usar por sua conta.
 
-> 💡 Não é um produto pronto pra empresa "instalar e vender". É uma base de código real, funcional, para você aprender, adaptar e usar por sua conta.
+> 💡 Continua sendo software que você roda localmente, na sua máquina, por sua conta e risco — não um SaaS pronto. Leia os avisos abaixo antes de usar.
 
 ---
 
@@ -80,18 +84,20 @@ Leia isto com atenção antes de rodar qualquer coisa:
 
 | Área | O que faz |
 |---|---|
-| 🗺️ **Canal Google Maps** | Busca por nicho + cidade, filtra automaticamente por nota ≥ 4.0 e ausência de site (checagem dupla: Google Maps + busca externa) |
-| 📸 **Canal Instagram** | Extrai comentários de um post, enriquece o perfil de cada autor (público/privado, bio, seguidores) e classifica prioridade com IA |
-| 🧠 **Mensagens com IA** | Gera copy de abordagem e de follow-up personalizado por lead, com fallback entre 3 provedores gratuitos (Gemini, Groq, NVIDIA) |
-| 📊 **CRM visual** | Funil de status (novo → contatado → respondeu → fechou/recusou/ignorado), com histórico completo de mudanças |
-| 🗂️ **Kanban** | Visão de funil com drag-and-drop entre colunas de status |
-| 🔔 **Follow-up inteligente** | Agenda automática com cadência crescente (+3, +5, +7 dias) para não soar insistente |
-| 🏷️ **Tags e observações** | Organização livre por tags e anotações por lead |
+| 🗺️ **Canal Google Maps** | Busca por nicho + cidade **ou por pino e raio num mapa** (estilo segmentação do Facebook Ads), com catálogo de 170+ nichos clicáveis |
+| 🔎 **Análise de site real** | Abre o site de cada empresa e detecta **sem site, site fora do ar, sem HTTPS, SSL inválido, não-mobile, lento ou feito em construtor pronto** (Wix, Canva...) — site ruim também é lead |
+| 🩻 **Raio-X do site** | Extrai do HTML o que o site **tem e o que falta** (WhatsApp, telefone, e-mail, mapa, fotos, meta description, favicon) — dado real, não chute |
+| 📄 **Diagnóstico em PDF** | Relatório de uma página pronto pra mandar no WhatsApp: reputação, problemas em linguagem leiga, raio-X e **nota oficial do Google PageSpeed** |
+| 📸 **Canal Instagram** | Extrai comentários de um post, enriquece o perfil de cada autor e classifica prioridade com IA, com retomada de análises interrompidas |
+| 🧠 **Mensagens com IA** | Copy de abordagem e follow-up **na sua voz** (perfil do vendedor), citando detalhes reais do site, com fallback entre 3 provedores gratuitos (Gemini, Groq, NVIDIA) |
+| 🎯 **Estratégia por lead** | Cada lead vem com cenário detectado, ângulo de venda, ganchos concretos e objeções com respostas prontas |
+| 🔥 **Score de priorização** | Nota + volume de avaliações + situação do site num score 0-100 para ordenar a fila de abordagem |
+| ⚡ **Sessão de prospecção** | Modo foco: um lead por vez do mais quente ao mais frio (follow-ups primeiro), abordagem em um clique com atalhos de teclado |
+| 📋 **Tarefas de hoje** | Follow-ups vencidos + leads quentes, cada um com o WhatsApp já preenchido |
+| 📊 **CRM visual + Kanban** | Funil de status com histórico, drag-and-drop, tags, observações e follow-up com cadência crescente (+3/+5/+7 dias) |
 | 📈 **Analytics** | Funil de conversão e desempenho por nicho, para os dois canais separados e combinados |
-| 📤 **Exportação CSV** | Exporta os leads filtrados a qualquer momento |
-| ⚡ **Ações em lote** | Muda status, ignora ou exclui múltiplos leads de uma vez |
-| 🌗 **Tema claro/escuro** | Interface adaptável, com preferência salva |
-| 📚 **Documentação in-app** | Seção de ajuda navegável dentro do próprio produto |
+| 🧰 **Produtividade** | Filtros (inclusive por situação do site), histórico de buscas, busca global (Ctrl+K), exportação CSV, ações em lote, tema claro/escuro |
+| 🔐 **Segurança** | Chaves de API guardadas no cofre de credenciais do sistema (Windows/DPAPI), nunca em texto puro |
 
 ---
 
@@ -128,10 +134,14 @@ Você vai precisar de **ao menos uma** chave de IA gratuita (usada para gerar as
 
 Tem duas formas de configurar, escolha a que for mais fácil pra você:
 
-- **Pela interface do sistema (mais fácil):** depois de rodar o projeto (veja o passo 6), acesse **Configurações** no menu e cole a chave direto lá. Fica salva no banco de dados, sem precisar mexer em nenhum arquivo nem reiniciar o servidor.
+- **Pela interface do sistema (mais fácil):** depois de rodar o projeto (veja o passo 6), acesse **Configurações** no menu e cole a chave direto lá. Fica guardada com segurança no cofre de credenciais do sistema (nunca em texto puro), sem precisar mexer em nenhum arquivo nem reiniciar o servidor.
 - **Editando o `.env` manualmente:** abra o arquivo `backend/.env` num editor de texto e preencha o valor da chave correspondente (`GEMINI_API_KEY`, `GROQ_API_KEY` ou `NVIDIA_API_KEY`).
 
 > Se você configurar dos dois jeitos, o que estiver salvo pela interface tem prioridade sobre o `.env`.
+
+> 💡 **Opcional — Google PageSpeed:** para incluir a nota oficial de desempenho do Google no diagnóstico em PDF, adicione uma chave do [PageSpeed Insights](https://developers.google.com/speed/docs/insights/v5/get-started) em Configurações. É gratuita e funciona sem chave para uso leve.
+
+> 💡 **Recomendado — Seu perfil:** ainda em Configurações, preencha "Seu perfil" (nome e o que você faz). As mensagens geradas por IA saem assinadas e na sua voz, em vez de genéricas.
 
 ### 3. Baixe a dependência externa do scraper
 
@@ -206,10 +216,11 @@ Acesse **http://localhost:5173** 🎉
 
 **Canal Google Maps:**
 ```
-Clique em "Nova busca", informe nicho + cidade (um por linha)
-Exemplo: corretor de imóveis em Curitiba
+Clique em "Nova busca" e escolha o modo:
+- Por texto: nicho + cidade, um por linha (ex: corretor de imóveis em Curitiba)
+- Por mapa: solte pinos, ajuste o raio de cada um e selecione os nichos no catálogo
 ```
-A ferramenta filtra automaticamente por nota ≥ 4.0 e ausência de site.
+A ferramenta analisa o site de cada empresa e mantém no CRM quem **não tem site ou tem site ruim** (fora do ar, inseguro, lento, não-mobile, construtor pronto...), descartando quem já tem um site decente.
 
 **Canal Instagram:**
 ```
@@ -217,12 +228,15 @@ Cole o link de um post. A ferramenta extrai os comentários,
 enriquece o perfil de cada autor e classifica a prioridade com IA
 ```
 
-**Em ambos os canais**, gerencie os leads no CRM:
-- Mova pelo funil de status (Kanban ou lista)
-- Adicione tags e observações
-- Agende follow-up com data
-- Gere mensagem de abordagem/follow-up com IA
-- Exporte em CSV a qualquer momento
+**Prospecção em ritmo:** abra a **Sessão de prospecção** — um lead por vez, do mais quente ao mais frio (follow-ups vencidos primeiro), com a estratégia e a mensagem prontas e abordagem em um clique. Ou a tela **Tarefas de hoje** para os follow-ups do dia.
+
+**Em cada lead**, você tem:
+- A **estratégia de abordagem** (cenário, ângulo, ganchos e objeções)
+- O **raio-X do site** (o que tem e o que falta)
+- A **mensagem por IA** na sua voz, e o **diagnóstico em PDF** para mandar no WhatsApp
+- Funil de status (Kanban ou lista), tags, observações, follow-up com data e exportação CSV
+
+> 💡 Aperte **Ctrl+K** de qualquer lugar para achar um lead pelo nome ou pular para uma tela.
 
 **Quer usar sem interface visual?** O fluxo antigo de linha de comando continua funcionando:
 ```powershell
@@ -236,14 +250,15 @@ py processar.py
 ## 🧱 Stack
 
 **Backend**
-- Python 3.11+ · Flask 3.1 · SQLite
+- Python 3.11+ · Flask 3.1 (blueprints) · SQLite
 - [instagrapi](https://github.com/subzeroid/instagrapi) (Instagram) · [gosom/google-maps-scraper](https://github.com/gosom/google-maps-scraper) (Maps, via Playwright)
 - Gemini / Groq / NVIDIA Build (geração de texto e classificação por IA, com fallback automático)
+- fpdf2 (diagnóstico em PDF) · keyring (cofre de credenciais) · PageSpeed Insights (opcional)
 
 **Frontend**
 - React 19 · TypeScript · Vite 8 · Tailwind CSS 4
 - shadcn/ui (Radix primitives) · TanStack React Query · React Router 7
-- Recharts (analytics) · Framer Motion (animações) · Sonner (toasts) · dnd-kit (Kanban)
+- Recharts (analytics) · Leaflet + OpenStreetMap (busca por mapa) · Framer Motion (animações) · Sonner (toasts) · dnd-kit (Kanban)
 
 ---
 
@@ -253,17 +268,23 @@ py processar.py
 ProspectOS/
 ├── iniciar.bat              # sobe backend + frontend juntos
 ├── backend/
-│   ├── app.py                # servidor Flask (API do CRM)
-│   ├── processar.py          # filtro/dedupe de leads do Maps + schema do banco
+│   ├── app.py                # monta o Flask e registra os blueprints
+│   ├── rotas_*.py            # rotas por domínio (leads, instagram, analytics, config)
+│   ├── ia.py                 # provedores de IA, prompts e fallback
+│   ├── jobs.py               # jobs de background (scraper e análise do Instagram)
+│   ├── processar.py          # análise de site + filtro/dedupe + schema do banco
+│   ├── diagnostico.py        # geração do diagnóstico em PDF
+│   ├── db.py                 # conexão, cofre de credenciais e backup
 │   ├── instagram/            # login, raspagem e enriquecimento de perfis
-│   └── tests/                 # suíte de testes (pytest)
+│   └── tests/                # suíte de testes (pytest, 230 testes)
 └── frontend/
     ├── src/
-    │   ├── pages/             # telas (dashboard, leads, analytics, instagram...)
-    │   ├── components/        # UI organizada por domínio (leads/, instagram/, dashboard/...)
-    │   ├── hooks/              # data-fetching e mutations (React Query)
-    │   ├── services/          # chamadas HTTP para a API do backend
-    │   └── types/              # tipos TypeScript espelhando o schema do backend
+    │   ├── pages/            # telas (dashboard, leads, sessão, tarefas, analytics...)
+    │   ├── components/       # UI por domínio (leads/, instagram/, dashboard/, search-modal/...)
+    │   ├── hooks/            # data-fetching e mutations (React Query)
+    │   ├── services/         # chamadas HTTP para a API do backend
+    │   ├── lib/              # estratégia, catálogo de nichos, utilitários
+    │   └── types/            # tipos TypeScript espelhando o schema do backend
     └── public/
 ```
 
@@ -299,7 +320,9 @@ Rode `py instagram\login.py SEU_USUARIO` de novo. Veja `backend/instagram/LEIA-M
 
 ## 🤝 Contribuindo
 
-Contribuições são bem-vindas! Este é um projeto pessoal mantido nas horas vagas, então:
+Contribuições são bem-vindas! Este é um projeto mantido nas horas vagas, então o processo é leve. Veja o guia completo em **[CONTRIBUTING.md](CONTRIBUTING.md)** — setup de dev, como rodar os testes e as convenções de código.
+
+Resumo:
 
 1. Abra uma [issue](../../issues) descrevendo o bug ou a ideia antes de codar algo grande. Isso evita retrabalho.
 2. Para PRs pequenos (fix de bug, melhoria de doc), pode mandar direto.
