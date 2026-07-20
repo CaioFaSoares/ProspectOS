@@ -14,6 +14,7 @@ import diagnostico
 import ia
 import jobs
 import processar
+from validacao import validar_ids_bulk
 from constantes import (
     DIAS_PARA_LEAD_DIFICIL,
     MAX_AREAS_BUSCA_MAPA,
@@ -290,11 +291,11 @@ def ignorar_lead(place_id):
 def atualizar_status_em_lote():
     """Muda o status de vários leads de uma vez, numa única transação."""
     corpo = request.json or {}
-    place_ids = corpo.get("place_ids") or []
     novo_status = (corpo.get("status") or "").strip()
 
-    if not place_ids:
-        return jsonify({"erro": "informe ao menos um place_id"}), 400
+    place_ids, erro = validar_ids_bulk(corpo.get("place_ids"), "place_id")
+    if erro:
+        return erro
     if novo_status not in STATUS_VALIDOS:
         return jsonify({"erro": f"status inválido: {novo_status}"}), 400
 
@@ -331,9 +332,9 @@ def atualizar_status_em_lote():
 @bp.route("/api/leads/bulk-ignorar", methods=["POST"])
 def ignorar_em_lote():
     """Marca vários leads como ignorados de uma vez, numa única transação."""
-    place_ids = (request.json or {}).get("place_ids") or []
-    if not place_ids:
-        return jsonify({"erro": "informe ao menos um place_id"}), 400
+    place_ids, erro = validar_ids_bulk((request.json or {}).get("place_ids"), "place_id")
+    if erro:
+        return erro
 
     agora = datetime.now().isoformat(timespec="seconds")
     conexao = db.conectar()
@@ -380,9 +381,9 @@ def excluir_em_lote_definitivamente():
     """Apaga várias linhas do banco de vez, numa única transação. Mesma proteção
     da versão individual: só apaga leads já 'ignorado', ignora silenciosamente
     qualquer place_id que não esteja nesse estado."""
-    place_ids = (request.json or {}).get("place_ids") or []
-    if not place_ids:
-        return jsonify({"erro": "informe ao menos um place_id"}), 400
+    place_ids, erro = validar_ids_bulk((request.json or {}).get("place_ids"), "place_id")
+    if erro:
+        return erro
 
     conexao = db.conectar()
     try:

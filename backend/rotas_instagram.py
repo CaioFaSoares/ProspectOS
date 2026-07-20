@@ -21,11 +21,13 @@ from constantes import (
     MAX_CARACTERES_OBSERVACOES_INSTAGRAM,
     MAX_CARACTERES_SUGESTAO_DM,
     MAX_CARACTERES_TAGS_INSTAGRAM,
+    MAX_IDS_BULK,
     PRIORIDADES_VALIDAS,
     STATUS_QUE_ENCERRAM_FOLLOWUP,
     STATUS_VALIDOS,
 )
 from rotas_leads import marcar_lead_dificil, sugerir_proxima_data_followup
+from validacao import validar_ids_bulk
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +234,16 @@ def excluir_post_instagram_definitivamente(post_id):
     return jsonify({"ok": True})
 
 
+def _comentarios_do_lead(lead):
+    """Comentários do lead como lista, tolerante a JSON corrompido - uma linha
+    com dado inválido não pode derrubar a listagem/exportação inteira (500)."""
+    try:
+        return json.loads(lead["comentarios"]) if lead["comentarios"] else []
+    except (TypeError, json.JSONDecodeError):
+        logger.warning("comentarios com JSON inválido no lead id=%s, tratando como vazio", lead["id"])
+        return []
+
+
 def _montar_filtro_leads_instagram(post_id):
     """Monta a condição WHERE e os parâmetros pros endpoints de listar/exportar
     leads do Instagram, aplicando os mesmos filtros: status (por padrão, esconde
@@ -275,7 +287,7 @@ def listar_leads_instagram(post_id):
         conexao.close()
 
     for lead in leads:
-        lead["comentarios"] = json.loads(lead["comentarios"]) if lead["comentarios"] else []
+        lead["comentarios"] = _comentarios_do_lead(lead)
         marcar_lead_dificil(lead)
 
     return jsonify({"leads": leads})
@@ -306,7 +318,7 @@ def exportar_csv_instagram(post_id):
         ]
     )
     for lead in linhas:
-        comentarios = json.loads(lead["comentarios"]) if lead["comentarios"] else []
+        comentarios = _comentarios_do_lead(lead)
         escritor.writerow(
             [
                 lead["username"],
@@ -371,8 +383,12 @@ def gravar_analise_lead_instagram_em_lote():
     itens = (request.json or {}).get("leads", [])
     if not isinstance(itens, list) or not itens:
         return jsonify({"erro": "envie {\"leads\": [{id, prioridade, justificativa, sugestao_dm, nicho}, ...]}"}), 400
+    if len(itens) > MAX_IDS_BULK:
+        return jsonify({"erro": f"no máximo {MAX_IDS_BULK} leads por vez (você enviou {len(itens)})"}), 400
 
     for item in itens:
+        if not isinstance(item, dict) or "id" not in item:
+            return jsonify({"erro": "cada lead precisa ter um 'id'"}), 400
         if item.get("prioridade") not in PRIORIDADES_VALIDAS:
             return jsonify({"erro": f"prioridade inválida em um dos leads (id={item.get('id')})"}), 400
         if len(str(item.get("justificativa", ""))) > MAX_CARACTERES_JUSTIFICATIVA:
@@ -478,11 +494,11 @@ def ignorar_lead_instagram(lead_id):
 @bp.route("/api/instagram/leads/bulk-status", methods=["POST"])
 def atualizar_status_em_lote_instagram():
     corpo = request.json or {}
-    lead_ids = corpo.get("lead_ids") or []
     novo_status = (corpo.get("status") or "").strip()
 
-    if not lead_ids:
-        return jsonify({"erro": "informe ao menos um lead_id"}), 400
+    lead_ids, erro = validar_ids_bulk(corpo.get("lead_ids"), "lead_id")
+    if erro:
+        return erro
     if novo_status not in STATUS_VALIDOS:
         return jsonify({"erro": f"status inválido: {novo_status}"}), 400
 
@@ -520,9 +536,9 @@ def atualizar_status_em_lote_instagram():
 
 @bp.route("/api/instagram/leads/bulk-ignorar", methods=["POST"])
 def ignorar_em_lote_instagram():
-    lead_ids = (request.json or {}).get("lead_ids") or []
-    if not lead_ids:
-        return jsonify({"erro": "informe ao menos um lead_id"}), 400
+    lead_ids, erro = validar_ids_bulk((request.json or {}).get("lead_ids"), "lead_id")
+    if erro:
+        return erro
 
     agora = datetime.now().isoformat(timespec="seconds")
     conexao = db.conectar()
@@ -565,9 +581,9 @@ def excluir_lead_instagram_definitivamente(lead_id):
 
 @bp.route("/api/instagram/leads/bulk-excluir", methods=["POST"])
 def excluir_em_lote_definitivamente_instagram():
-    lead_ids = (request.json or {}).get("lead_ids") or []
-    if not lead_ids:
-        return jsonify({"erro": "informe ao menos um lead_id"}), 400
+    lead_ids, erro = validar_ids_bulk((request.json or {}).get("lead_ids"), "lead_id")
+    if erro:
+        return erro
 
     conexao = db.conectar()
     try:

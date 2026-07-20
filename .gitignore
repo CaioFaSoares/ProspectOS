@@ -5,3 +5,6 @@ logs/
 .env
 # artefatos de ferramentas de navegador/screenshot usados no desenvolvimento
 .playwright-mcp/
+
+# nota da release (rascunho local, nao versionar)
+release-*.md

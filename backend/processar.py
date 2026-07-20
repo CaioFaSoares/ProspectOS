@@ -604,8 +604,31 @@ def migrar_banco(conexao):
     )
     conexao.commit()
 
+    _criar_indices(conexao)
     _preencher_nicho_e_cidade_faltantes(conexao)
     _deduplicar_leads_instagram_por_username(conexao)
+
+
+# Índices nas colunas mais filtradas/ordenadas. Imperceptível com poucos leads,
+# mas evita full-table-scan conforme o banco cresce. Idempotente (roda todo boot).
+_INDICES = [
+    "CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status)",
+    "CREATE INDEX IF NOT EXISTS idx_leads_proximo_followup ON leads(proximo_followup)",
+    "CREATE INDEX IF NOT EXISTS idx_leads_nicho ON leads(nicho)",
+    "CREATE INDEX IF NOT EXISTS idx_leads_site_status ON leads(site_status)",
+    "CREATE INDEX IF NOT EXISTS idx_leads_visto_em ON leads(visto_em)",
+    "CREATE INDEX IF NOT EXISTS idx_ig_leads_post_id ON instagram_leads(post_id)",
+    "CREATE INDEX IF NOT EXISTS idx_ig_leads_status ON instagram_leads(status)",
+    "CREATE INDEX IF NOT EXISTS idx_ig_leads_proximo_followup ON instagram_leads(proximo_followup)",
+    "CREATE INDEX IF NOT EXISTS idx_hist_status ON historico_status(alterado_em, status_novo)",
+    "CREATE INDEX IF NOT EXISTS idx_hist_status_ig ON historico_status_instagram(alterado_em, status_novo)",
+]
+
+
+def _criar_indices(conexao):
+    for sql in _INDICES:
+        conexao.execute(sql)
+    conexao.commit()
 
 
 def _deduplicar_leads_instagram_por_username(conexao):

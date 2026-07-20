@@ -653,3 +653,23 @@ class TestExtrairNichoECidade:
     def test_vazio_retorna_vazio(self):
         assert extrair_nicho_e_cidade("") == ("", "")
         assert extrair_nicho_e_cidade(None) == ("", "")
+
+
+class TestIndices:
+    def test_indices_criados_no_preparar_banco(self):
+        import sqlite3
+        cx = sqlite3.connect(":memory:")
+        processar.preparar_banco(cx)
+        indices = {r[0] for r in cx.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_%'"
+        )}
+        # colunas quentes das rotas (filtro/ordenacao) precisam de indice
+        for esperado in ("idx_leads_status", "idx_leads_proximo_followup",
+                         "idx_leads_site_status", "idx_ig_leads_post_id", "idx_hist_status"):
+            assert esperado in indices, f"faltou o indice {esperado}"
+
+    def test_preparar_banco_e_idempotente(self):
+        import sqlite3
+        cx = sqlite3.connect(":memory:")
+        processar.preparar_banco(cx)
+        processar.preparar_banco(cx)  # nao pode quebrar rodando de novo

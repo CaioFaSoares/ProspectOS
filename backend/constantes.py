@@ -24,6 +24,10 @@ MAX_CARACTERES_TEXTO_TEMPLATE = 3000
 
 DIAS_PARA_LEAD_DIFICIL = 5
 
+# Limite de ids por ação em lote. Protege contra o limite de variáveis vinculadas
+# do SQLite (~999) num IN (...) e contra payloads absurdos.
+MAX_IDS_BULK = 500
+
 # Busca por mapa (pino + raio)
 MAX_AREAS_BUSCA_MAPA = 5
 MAX_NICHOS_BUSCA_MAPA = 15

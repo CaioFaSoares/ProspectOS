@@ -100,6 +100,18 @@ class TestExecutarComFallback:
         assert provedor == "nvidia"
         assert chamadas == []
 
+    def test_provedor_que_estoura_timeout_cai_para_o_proximo(self, monkeypatch):
+        def gemini_pendurado(system, user, temperatura=None, formato_json=False):
+            raise TimeoutError("request timed out")
+
+        configurar_provedores(
+            monkeypatch, gemini=gemini_pendurado, groq=resposta_fixa("resposta do groq")
+        )
+
+        resultado, provedor, _avisos = ia.executar_com_fallback("system", "user")
+        assert resultado == "resposta do groq"
+        assert provedor == "groq"
+
     def test_todos_falharam_levanta_com_ultimo_erro(self, monkeypatch):
         erro_groq = ErroGenerico("groq caiu")
 

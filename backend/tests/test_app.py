@@ -525,3 +525,22 @@ class TestAnalytics:
         assert por_nicho["clínica de estética"]["taxa_conversao"] == 50.0
 
         assert por_nicho["corretor de imóveis"]["total"] == 1  # ignorado não conta
+
+
+class TestLimiteBulk:
+    def test_bulk_status_acima_do_limite_retorna_400(self, cliente):
+        ids = [f"lead-{i}" for i in range(501)]
+        resposta = cliente.post("/api/leads/bulk-status", json={"place_ids": ids, "status": "contatado"})
+        assert resposta.status_code == 400
+        assert "500" in resposta.get_json()["erro"]
+
+    def test_bulk_excluir_acima_do_limite_retorna_400(self, cliente):
+        ids = [f"lead-{i}" for i in range(501)]
+        resposta = cliente.post("/api/leads/bulk-excluir", json={"place_ids": ids})
+        assert resposta.status_code == 400
+
+    def test_bulk_no_limite_exato_passa(self, cliente):
+        inserir_lead("lead-0", status="novo")
+        ids = [f"lead-{i}" for i in range(500)]  # exatamente o limite
+        resposta = cliente.post("/api/leads/bulk-status", json={"place_ids": ids, "status": "contatado"})
+        assert resposta.status_code == 200

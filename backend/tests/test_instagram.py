@@ -189,6 +189,25 @@ class TestListarLeads:
         leads = cliente.get(f"/api/instagram/posts/{post_id}/leads").get_json()["leads"]
         assert leads[0]["comentarios"] == ["oi", "quero saber mais"]
 
+    def test_comentario_com_json_invalido_nao_derruba_a_lista(self, cliente):
+        """Uma linha com comentarios corrompido não pode dar 500 e esconder os
+        outros leads do post - vira lista vazia só naquele lead."""
+        post_id = inserir_post()
+        inserir_lead_instagram("bom", post_id, comentarios='["ok"]')
+        inserir_lead_instagram("corrompido", post_id, comentarios="isto não é json{{")
+
+        resposta = cliente.get(f"/api/instagram/posts/{post_id}/leads")
+        assert resposta.status_code == 200
+        leads = {l["username"]: l["comentarios"] for l in resposta.get_json()["leads"]}
+        assert leads == {"bom": ["ok"], "corrompido": []}
+
+    def test_exportar_csv_tolera_json_invalido(self, cliente):
+        post_id = inserir_post()
+        inserir_lead_instagram("corrompido", post_id, comentarios="{quebrado")
+
+        resposta = cliente.get(f"/api/instagram/posts/{post_id}/exportar")
+        assert resposta.status_code == 200
+
 
 class TestStatusLead:
     def test_atualiza_status_e_grava_historico(self, cliente):

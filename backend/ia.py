@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 # tenta o próximo automaticamente. Cada usuário pode configurar 1, 2 ou os 3.
 ORDEM_PROVEDORES_IA = ["gemini", "groq", "nvidia"]
 
+# Timeout por chamada de IA. Sem ele, um provedor que pendura a conexão travaria
+# a geração pra sempre e o fallback nunca chegaria ao próximo provedor.
+IA_TIMEOUT_SEGUNDOS = 45
+
 NOMES_AMIGAVEIS_PROVEDOR = {
     "gemini": "Google Gemini",
     "groq": "Groq",
@@ -108,7 +112,8 @@ def gemini_gerar_mensagem(system, user, temperatura=TEMPERATURA_COPY, formato_js
     from google import genai
 
     chave = db.obter_config("gemini")
-    cliente = genai.Client(api_key=chave)
+    # google-genai usa timeout em MILISSEGUNDOS no http_options
+    cliente = genai.Client(api_key=chave, http_options={"timeout": IA_TIMEOUT_SEGUNDOS * 1000})
     config = {"system_instruction": system, "temperature": temperatura}
     if formato_json:
         config["response_mime_type"] = "application/json"
@@ -122,7 +127,7 @@ def groq_gerar_mensagem(system, user, temperatura=TEMPERATURA_COPY, formato_json
     from openai import OpenAI
 
     chave = db.obter_config("groq")
-    cliente = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=chave)
+    cliente = OpenAI(base_url="https://api.groq.com/openai/v1", api_key=chave, timeout=IA_TIMEOUT_SEGUNDOS)
     extras = {"response_format": {"type": "json_object"}} if formato_json else {}
     resposta = cliente.chat.completions.create(
         model="llama-3.3-70b-versatile",
@@ -140,7 +145,7 @@ def nvidia_gerar_mensagem(system, user, temperatura=TEMPERATURA_COPY, formato_js
     from openai import OpenAI
 
     chave = db.obter_config("nvidia")
-    cliente = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=chave)
+    cliente = OpenAI(base_url="https://integrate.api.nvidia.com/v1", api_key=chave, timeout=IA_TIMEOUT_SEGUNDOS)
     extras = {"response_format": {"type": "json_object"}} if formato_json else {}
     resposta = cliente.chat.completions.create(
         model="nvidia/llama-3.3-nemotron-super-49b-v1",
