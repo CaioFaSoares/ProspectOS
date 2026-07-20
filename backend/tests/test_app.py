@@ -11,6 +11,7 @@ import app as app_module
 import constantes
 import db
 import jobs
+import paths
 import processar
 
 
@@ -324,7 +325,8 @@ class TestBuscaPorMapa:
         """Redireciona o queries.txt pra pasta temporária e captura o disparo da
         thread (que nunca deve rodar de verdade nos testes)."""
         disparos = []
-        monkeypatch.setattr(db, "APP_DIR", tmp_path)
+        # o queries.txt é escrito na área de dados (paths.DIR_DADOS)
+        monkeypatch.setattr(paths, "DIR_DADOS", tmp_path)
         monkeypatch.setattr(jobs, "iniciar_thread_busca", lambda areas=None: disparos.append(areas))
         return cliente, tmp_path, disparos
 

@@ -12,11 +12,16 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from paths import DIR_DADOS, DIR_RECURSOS
+
 logger = logging.getLogger(__name__)
 
-APP_DIR = Path(__file__).parent
-CAMINHO_BANCO = APP_DIR / "leads.db"
-PASTA_BACKUPS = APP_DIR / "backups"
+# APP_DIR aponta pros RECURSOS (código, scraper .exe) - continua exportado porque
+# jobs.py e outros o usam. Dados graváveis (banco, backups) vêm de DIR_DADOS:
+# na fonte é a mesma pasta de sempre; empacotado vira %APPDATA%\ProspectOS.
+APP_DIR = DIR_RECURSOS
+CAMINHO_BANCO = DIR_DADOS / "leads.db"
+PASTA_BACKUPS = DIR_DADOS / "backups"
 MAX_BACKUPS_MANTIDOS = 20
 
 CHAVES_CONFIG_VALIDAS = {

@@ -13,6 +13,7 @@ import db
 import diagnostico
 import ia
 import jobs
+import paths
 import processar
 from validacao import validar_ids_bulk
 from constantes import (
@@ -894,7 +895,8 @@ def disparar_busca():
         return jsonify({"erro": "já existe uma busca em andamento"}), 409
 
     try:
-        caminho_queries = db.APP_DIR / "queries.txt"
+        # queries.txt é escrito a cada busca - vai pra área de dados (gravável)
+        caminho_queries = paths.caminho_dados("queries.txt", criar_pai=True)
         caminho_queries.write_text(queries_texto + "\n", encoding="utf-8")
         jobs.iniciar_thread_busca(areas)
     except Exception:

@@ -15,7 +15,11 @@ from pathlib import Path
 from instagrapi import Client
 from instagrapi.exceptions import TwoFactorRequired
 
-PASTA_SESSAO = Path(__file__).parent / "sessao"
+# permite achar o paths.py do backend também quando rodado standalone
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from paths import DIR_DADOS  # noqa: E402
+
+PASTA_SESSAO = DIR_DADOS / "instagram" / "sessao"
 
 
 def main() -> None:

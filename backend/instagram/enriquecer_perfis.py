@@ -40,7 +40,11 @@ from instagrapi.exceptions import (
     UserNotFound,
 )
 
-PASTA_SESSAO = Path(__file__).parent / "sessao"
+# permite achar o paths.py do backend também quando rodado standalone
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from paths import DIR_DADOS  # noqa: E402
+
+PASTA_SESSAO = DIR_DADOS / "instagram" / "sessao"
 DELAY_BASE_SEGUNDOS = 8  # intervalo base entre consultas de perfil
 DELAY_MAXIMO_SEGUNDOS = 90  # teto do backoff exponencial
 FALHAS_DE_LIMITE_SEGUIDAS_PARA_PARAR = 3  # rate limits consecutivos antes de desistir

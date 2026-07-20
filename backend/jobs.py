@@ -20,11 +20,14 @@ from pathlib import Path
 import db
 import ia
 import processar
+from paths import DIR_DADOS, DIR_RECURSOS, caminho_recurso
 
 logger = logging.getLogger(__name__)
 
-APP_DIR = db.APP_DIR
-PASTA_INSTAGRAM = APP_DIR / "instagram"
+# recursos read-only (código do instagram, scraper .exe) ficam junto do app;
+# tudo que os jobs ESCREVEM (queries.txt, saidas/) vai pra área de dados
+APP_DIR = DIR_RECURSOS
+PASTA_INSTAGRAM = DIR_RECURSOS / "instagram"
 sys.path.insert(0, str(PASTA_INSTAGRAM))
 
 TIMEOUT_SCRAPER_SEGUNDOS = 900  # 15 minutos - nunca deve travar pra sempre
@@ -309,8 +312,8 @@ def _executar_scraper(arquivo_bruto, ambiente, flags_extras=()):
     """Roda o binário do scraper uma vez, com progresso ao vivo.
     Retorna None em sucesso, ou a mensagem de erro amigável em falha."""
     comando_scraper = [
-        str(APP_DIR / "google-maps-scraper.exe"),
-        "-input", str(APP_DIR / "queries.txt"),
+        str(caminho_recurso("google-maps-scraper.exe")),
+        "-input", str(DIR_DADOS / "queries.txt"),
         "-results", str(arquivo_bruto),
         "-lang", "pt",
         "-depth", "5",
@@ -322,9 +325,12 @@ def _executar_scraper(arquivo_bruto, ambiente, flags_extras=()):
         comando_scraper += ["-proxies", proxies]
 
     try:
+        # cwd precisa ser GRAVÁVEL: o scraper cria arquivos de trabalho (cache do
+        # Playwright etc.) - empacotado, a pasta do app é read-only, então usamos
+        # a área de dados
         returncode, stderr_completo = rodar_scraper_com_progresso(
             comando=comando_scraper,
-            cwd=str(APP_DIR),
+            cwd=str(DIR_DADOS),
             env=ambiente,
             timeout_segundos=TIMEOUT_SCRAPER_SEGUNDOS,
             callback_linha=_processar_linha_de_progresso_scraper,
@@ -370,7 +376,7 @@ def _buscar_por_areas(areas, ambiente, data):
             progresso_atual=i, progresso_total=len(areas),
         )
 
-        arquivo_bruto = APP_DIR / "saidas" / f"bruto_{data}_area{i}.csv"
+        arquivo_bruto = DIR_DADOS / "saidas" / f"bruto_{data}_area{i}.csv"
         flags_geo = [
             "-geo", f"{area['lat']},{area['lng']}",
             "-radius", str(area["raio_m"]),
@@ -420,16 +426,19 @@ def _rodar_busca_em_background(areas=None):
         db.fazer_backup_banco()
 
         data = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-        pasta_saidas = APP_DIR / "saidas"
-        pasta_saidas.mkdir(exist_ok=True)
+        pasta_saidas = DIR_DADOS / "saidas"
+        pasta_saidas.mkdir(parents=True, exist_ok=True)
 
         # caminho do Node usado pelo Playwright embutido no scraper: pode vir da
-        # tabela configuracoes (chave "node_path"), da variável de ambiente, ou
-        # cai no local padrão de instalação do Windows
+        # tabela configuracoes (chave "node_path"), da variável de ambiente, do
+        # Node portátil distribuído junto com o app empacotado, ou cai no local
+        # padrão de instalação do Windows
+        node_embutido = caminho_recurso("node", "node.exe")
         ambiente = os.environ.copy()
         ambiente["PLAYWRIGHT_NODEJS_PATH"] = (
             db.obter_config("node_path")
             or ambiente.get("PLAYWRIGHT_NODEJS_PATH")
+            or (str(node_embutido) if node_embutido.exists() else None)
             or r"C:\Program Files\nodejs\node.exe"
         )
 

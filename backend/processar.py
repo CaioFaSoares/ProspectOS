@@ -21,13 +21,17 @@ from datetime import date, datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
+from paths import DIR_DADOS
+
 logger = logging.getLogger(__name__)
 
 NOTA_MINIMA = 4.0
-PASTA_SAIDAS = Path(__file__).parent / "saidas"
-CAMINHO_BANCO = Path(__file__).parent / "leads.db"
+# tudo que este módulo escreve (saídas, banco, queries.txt da última busca) fica
+# na área de dados - na fonte é a pasta do projeto, empacotado é %APPDATA%\ProspectOS
+PASTA_SAIDAS = DIR_DADOS / "saidas"
+CAMINHO_BANCO = DIR_DADOS / "leads.db"
 VERIFICACOES_PARALELAS = 6
-CAMINHO_QUERIES_PADRAO = Path(__file__).parent / "queries.txt"
+CAMINHO_QUERIES_PADRAO = DIR_DADOS / "queries.txt"
 LINHAS_POR_COMMIT = 20
 
 # Domínios que NÃO contam como "site próprio da empresa" quando aparecem numa busca

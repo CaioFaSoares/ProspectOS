@@ -21,8 +21,14 @@ from instagrapi.exceptions import (
     PleaseWaitFewMinutes,
 )
 
-PASTA_SESSAO = Path(__file__).parent / "sessao"
-PASTA_COMENTARIOS = Path(__file__).parent / "comentarios"
+# permite achar o paths.py do backend também quando rodado standalone
+# (py raspar_comentarios.py) - importado pelo jobs.py, o backend já está no path
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from paths import DIR_DADOS  # noqa: E402
+
+# sessão e comentários são ESCRITOS pelo app - ficam na área de dados
+PASTA_SESSAO = DIR_DADOS / "instagram" / "sessao"
+PASTA_COMENTARIOS = DIR_DADOS / "instagram" / "comentarios"
 
 
 def carregar_sessao() -> Client:
