@@ -353,8 +353,50 @@ def _executar_scraper(arquivo_bruto, ambiente, flags_extras=()):
 
 CHAVES_CONTAGENS_SOMADAS = (
     "total_no_csv", "novos", "novos_sem_site", "novos_site_ruim",
-    "descartados_por_site_ok", "erros_de_linha",
+    "descartados_por_site_ok", "descartados_nota_baixa",
+    "descartados_sem_telefone", "erros_de_linha",
 )
+
+DICA_FONTE_PLACES = (
+    " Dica: em Configurações → Fonte de dados você pode usar a Google Places API "
+    "oficial, que é mais estável que o scraper."
+)
+
+
+def montar_mensagem_conclusao(contagens):
+    """Mensagem final com o funil completo: quantas empresas foram capturadas,
+    quantas viraram leads e POR QUE as demais ficaram de fora. Sem essa
+    transparência o usuário compara com o que vê no Google ("lá tem 20, aqui
+    puxou 2") e conclui que a busca está bugada."""
+    total = contagens["total_no_csv"]
+    novos = contagens["novos"]
+
+    descartes = []
+    if contagens.get("descartados_por_site_ok"):
+        descartes.append(f"{contagens['descartados_por_site_ok']} já têm site bom (não precisam de você)")
+    if contagens.get("descartados_nota_baixa"):
+        descartes.append(f"{contagens['descartados_nota_baixa']} com nota baixa ou sem avaliações")
+    if contagens.get("descartados_sem_telefone"):
+        descartes.append(f"{contagens['descartados_sem_telefone']} sem telefone pra contato")
+
+    ja_conhecidos = total - novos - sum((
+        contagens.get("descartados_por_site_ok", 0),
+        contagens.get("descartados_nota_baixa", 0),
+        contagens.get("descartados_sem_telefone", 0),
+        contagens.get("erros_de_linha", 0),
+    ))
+    if ja_conhecidos > 0:
+        descartes.append(f"{ja_conhecidos} já estavam na sua base (dados atualizados)")
+
+    detalhe_funil = f" Das {total} empresas capturadas: " + "; ".join(descartes) + "." if descartes else ""
+
+    if novos == 0:
+        return "Busca concluída: nenhum lead novo desta vez." + detalhe_funil
+    return (
+        f"Busca concluída: {novos} lead(s) novo(s) - "
+        f"{contagens['novos_sem_site']} sem site e {contagens['novos_site_ruim']} com site ruim!"
+        + detalhe_funil
+    )
 
 
 def _ler_queries_da_busca():
@@ -447,6 +489,8 @@ def _buscar_por_areas(areas, ambiente, data):
 
     if not alguma_area_ok:
         estado_busca["mensagem"] = "A busca falhou em todas as áreas. " + " | ".join(avisos)
+        if (db.obter_config("fonte_maps") or "scraper") == "scraper":
+            estado_busca["mensagem"] += DICA_FONTE_PLACES
         return None
 
     total["avisos_areas"] = avisos
@@ -495,6 +539,8 @@ def _rodar_busca_em_background(areas=None):
             arquivo_bruto = pasta_saidas / f"bruto_{data}.csv"
             erro = _capturar_dados_brutos(arquivo_bruto, ambiente)
             if erro:
+                if (db.obter_config("fonte_maps") or "scraper") == "scraper":
+                    erro += DICA_FONTE_PLACES
                 estado_busca["mensagem"] = erro
                 return
 
@@ -503,6 +549,7 @@ def _rodar_busca_em_background(areas=None):
             estado_busca["empresas_processadas"] = 0
             contagens = processar.processar(arquivo_bruto, callback_progresso=_callback_progresso_verificacao)
 
+        fonte = db.obter_config("fonte_maps") or "scraper"
         if contagens["total_no_csv"] == 0:
             if estado_busca["empresas_encontradas"] == 0:
                 estado_busca["mensagem"] = (
@@ -510,23 +557,16 @@ def _rodar_busca_em_background(areas=None):
                     "rodou sem erro, só não conseguiu capturar nada. Isso geralmente é bloqueio "
                     "temporário do Google para o seu IP/rede (comum em VPN, rede corporativa ou "
                     "após várias buscas seguidas), não um erro de digitação. Tente novamente mais "
-                    "tarde ou numa rede diferente. Veja logs/prospeccao.log para mais detalhes."
+                    "tarde ou numa rede diferente."
+                    + (DICA_FONTE_PLACES if fonte == "scraper" else "")
                 )
             else:
                 estado_busca["mensagem"] = (
                     "Busca concluída, mas nenhuma empresa foi encontrada. Confira se o nicho/cidade "
                     "estão escritos corretamente."
                 )
-        elif contagens["novos"] == 0:
-            estado_busca["mensagem"] = (
-                f"Busca concluída: nenhum lead novo. {contagens['total_no_csv']} empresa(s) encontrada(s), "
-                f"mas todas já eram conhecidas ou tinham um site decente."
-            )
         else:
-            estado_busca["mensagem"] = (
-                f"Busca concluída: {contagens['novos']} lead(s) novo(s) - "
-                f"{contagens['novos_sem_site']} sem site e {contagens['novos_site_ruim']} com site ruim!"
-            )
+            estado_busca["mensagem"] = montar_mensagem_conclusao(contagens)
 
         avisos_areas = contagens.get("avisos_areas") or []
         if avisos_areas:

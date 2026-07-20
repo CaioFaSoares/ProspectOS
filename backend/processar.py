@@ -828,6 +828,11 @@ def processar(caminho_csv_bruto, caminho_queries=CAMINHO_QUERIES_PADRAO, callbac
     novos_site_ruim = 0
     erros_de_linha = 0
     total_no_csv = 0
+    # contadores do funil: cada motivo de descarte é contado pra mensagem final
+    # explicar POR QUE "o Google mostrava 20 e só virou 2" - sem isso o usuário
+    # acha que a busca está bugada quando na verdade é o filtro fazendo o papel dele
+    descartados_nota_baixa = 0
+    descartados_sem_telefone = 0
 
     # Fase 1: filtra candidatas (rápido, sem rede) e prepara link do WhatsApp de cada uma
     candidatas = []
@@ -835,9 +840,11 @@ def processar(caminho_csv_bruto, caminho_queries=CAMINHO_QUERIES_PADRAO, callbac
         for linha in csv.DictReader(arquivo):
             total_no_csv += 1
             if not linha_qualifica(linha):
+                descartados_nota_baixa += 1  # nota < mínima ou sem avaliação
                 continue
             link_whatsapp = telefone_para_whatsapp(linha.get("phone"))
             if not link_whatsapp:
+                descartados_sem_telefone += 1
                 continue
             candidatas.append((linha, link_whatsapp))
 
@@ -997,6 +1004,8 @@ def processar(caminho_csv_bruto, caminho_queries=CAMINHO_QUERIES_PADRAO, callbac
         "novos_sem_site": novos_sem_site,
         "novos_site_ruim": novos_site_ruim,
         "descartados_por_site_ok": descartados_por_site_ok,
+        "descartados_nota_baixa": descartados_nota_baixa,
+        "descartados_sem_telefone": descartados_sem_telefone,
         "erros_de_linha": erros_de_linha,
     }
 
