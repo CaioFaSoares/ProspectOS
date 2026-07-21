@@ -2,3 +2,6 @@
 # de um arquivo único como se fosse diretório, o que quebra o mount do Caddyfile.
 FROM caddy:2-alpine
 COPY Caddyfile /etc/caddy/Caddyfile
+COPY entrypoint-proxy.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
