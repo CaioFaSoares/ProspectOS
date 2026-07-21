@@ -1,0 +1,4 @@
+# Caddyfile embutido na imagem (não em bind mount) - Coolify trata bind mount
+# de um arquivo único como se fosse diretório, o que quebra o mount do Caddyfile.
+FROM caddy:2-alpine
+COPY Caddyfile /etc/caddy/Caddyfile

@@ -17,13 +17,13 @@ services:
       retries: 3
 
   proxy:
-    image: caddy:2-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.proxy # Caddyfile embutido na imagem, sem bind mount (ver Dockerfile.proxy)
     depends_on:
       prospectos:
         condition: service_healthy
     env_file: .env
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
     expose:
       - "8080" # aponte o domínio no Coolify pra este serviço/porta, não pro "prospectos"
     restart: unless-stopped
