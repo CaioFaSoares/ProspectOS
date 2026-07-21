@@ -32,6 +32,10 @@ sys.path.insert(0, str(PASTA_INSTAGRAM))
 
 TIMEOUT_SCRAPER_SEGUNDOS = 900  # 15 minutos - nunca deve travar pra sempre
 
+# no Windows o binário é .exe; no Linux (container/servidor) é o binário nativo
+# sem extensão - mesmo projeto (gosom/google-maps-scraper), build por plataforma
+NOME_BINARIO_SCRAPER = "google-maps-scraper.exe" if sys.platform.startswith("win") else "google-maps-scraper"
+
 # guarda o estado da busca em andamento (pra não deixar disparar duas ao mesmo tempo
 # e pra interface conseguir perguntar "já terminou?"). "etapa" e os contadores dão
 # um progresso ao vivo em vez de só uma mensagem estática.
@@ -209,7 +213,7 @@ def traduzir_erro_scraper(stderr, returncode):
             "instalado (veja o LEIA-ME.md) e tente novamente."
         )
     if "no such file" in texto or "not found" in texto:
-        return "O programa google-maps-scraper.exe não foi encontrado na pasta do projeto."
+        return f"O programa {NOME_BINARIO_SCRAPER} não foi encontrado na pasta do projeto."
     if "deadline exceeded" in texto or "timeout" in texto:
         return "A busca no Google Maps demorou demais e foi interrompida. Tente de novo."
 
@@ -218,18 +222,20 @@ def traduzir_erro_scraper(stderr, returncode):
     )
 
 
-def _ler_stderr_em_thread(pipe, buffer_lista):
-    """Lê stderr continuamente numa thread separada, pra não bloquear o pipe
-    (senão o processo trava se encher o buffer de stderr enquanto só lemos stdout)."""
+def _drenar_pipe_em_thread(pipe, buffer_lista):
+    """Lê um pipe continuamente numa thread separada, pra não bloquear
+    (senão o processo trava se encher o buffer enquanto só lemos o outro pipe)."""
     for linha in iter(pipe.readline, ""):
         buffer_lista.append(linha)
     pipe.close()
 
 
 def rodar_scraper_com_progresso(comando, cwd, env, timeout_segundos, callback_linha=None):
-    """Roda o scraper igual subprocess.run(), mas lê o stdout linha a linha em tempo
+    """Roda o scraper igual subprocess.run(), mas lê a saída linha a linha em tempo
     real (em vez de esperar o processo inteiro terminar), chamando callback_linha
-    a cada linha - é isso que alimenta o contador de progresso ao vivo."""
+    a cada linha - é isso que alimenta o contador de progresso ao vivo.
+    O binário escreve seus logs estruturados (JSON com "job finished"/"places
+    found") em stderr, não em stdout - por isso é o stderr que lemos ao vivo."""
     processo = subprocess.Popen(
         comando,
         cwd=cwd,
@@ -242,15 +248,17 @@ def rodar_scraper_com_progresso(comando, cwd, env, timeout_segundos, callback_li
         bufsize=1,
     )
 
-    stderr_linhas = []
-    thread_stderr = threading.Thread(
-        target=_ler_stderr_em_thread, args=(processo.stderr, stderr_linhas), daemon=True
+    stdout_linhas = []
+    thread_stdout = threading.Thread(
+        target=_drenar_pipe_em_thread, args=(processo.stdout, stdout_linhas), daemon=True
     )
-    thread_stderr.start()
+    thread_stdout.start()
 
+    stderr_linhas = []
     inicio = time.monotonic()
     try:
-        for linha in processo.stdout:
+        for linha in processo.stderr:
+            stderr_linhas.append(linha)
             if time.monotonic() - inicio > timeout_segundos:
                 processo.kill()
                 processo.wait(timeout=5)
@@ -266,8 +274,8 @@ def rodar_scraper_com_progresso(comando, cwd, env, timeout_segundos, callback_li
         processo.wait(timeout=5)
         raise
     finally:
-        processo.stdout.close()
-        thread_stderr.join(timeout=5)
+        processo.stderr.close()
+        thread_stdout.join(timeout=5)
 
     return returncode, "".join(stderr_linhas)
 
@@ -312,7 +320,7 @@ def _executar_scraper(arquivo_bruto, ambiente, flags_extras=()):
     """Roda o binário do scraper uma vez, com progresso ao vivo.
     Retorna None em sucesso, ou a mensagem de erro amigável em falha."""
     comando_scraper = [
-        str(caminho_recurso("google-maps-scraper.exe")),
+        str(caminho_recurso(NOME_BINARIO_SCRAPER)),
         "-input", str(DIR_DADOS / "queries.txt"),
         "-results", str(arquivo_bruto),
         "-lang", "pt",
@@ -342,8 +350,8 @@ def _executar_scraper(arquivo_bruto, ambiente, flags_extras=()):
             "ou confira sua conexão com a internet."
         )
     except FileNotFoundError:
-        logger.exception("google-maps-scraper.exe não encontrado")
-        return "O programa google-maps-scraper.exe não foi encontrado na pasta do projeto."
+        logger.exception("%s não encontrado", NOME_BINARIO_SCRAPER)
+        return f"O programa {NOME_BINARIO_SCRAPER} não foi encontrado na pasta do projeto."
 
     if returncode != 0:
         logger.error("scraper falhou (código %s). stderr: %s", returncode, stderr_completo[-2000:])
@@ -520,16 +528,24 @@ def _rodar_busca_em_background(areas=None):
 
         # caminho do Node usado pelo Playwright embutido no scraper: pode vir da
         # tabela configuracoes (chave "node_path"), da variável de ambiente, do
-        # Node portátil distribuído junto com o app empacotado, ou cai no local
-        # padrão de instalação do Windows
-        node_embutido = caminho_recurso("node", "node.exe")
+        # Node portátil distribuído junto com o app empacotado, ou (só no Windows)
+        # cai no local padrão de instalação. No Linux, se nada disso existir,
+        # deixamos sem PLAYWRIGHT_NODEJS_PATH - o binário nativo do scraper baixa
+        # e gerencia seu próprio driver/Node sozinho, sem precisar de instalação
+        # externa nenhuma.
+        rodando_no_windows = sys.platform.startswith("win")
+        node_embutido = caminho_recurso("node", "node.exe" if rodando_no_windows else "node")
         ambiente = os.environ.copy()
-        ambiente["PLAYWRIGHT_NODEJS_PATH"] = (
-            db.obter_config("node_path")
-            or ambiente.get("PLAYWRIGHT_NODEJS_PATH")
-            or (str(node_embutido) if node_embutido.exists() else None)
-            or r"C:\Program Files\nodejs\node.exe"
-        )
+        candidatos_node = [
+            db.obter_config("node_path"),
+            ambiente.get("PLAYWRIGHT_NODEJS_PATH"),
+            str(node_embutido) if node_embutido.exists() else None,
+        ]
+        if rodando_no_windows:
+            candidatos_node.append(r"C:\Program Files\nodejs\node.exe")
+        node_path = next((caminho for caminho in candidatos_node if caminho), None)
+        if node_path:
+            ambiente["PLAYWRIGHT_NODEJS_PATH"] = node_path
 
         if areas:
             contagens = _buscar_por_areas(areas, ambiente, data)

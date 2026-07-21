@@ -76,7 +76,7 @@ class TestTraduzirErroScraper:
 
     def test_arquivo_nao_encontrado(self):
         msg = jobs.traduzir_erro_scraper("no such file or directory", 127)
-        assert "google-maps-scraper.exe" in msg
+        assert jobs.NOME_BINARIO_SCRAPER in msg
 
     def test_timeout_deadline(self):
         msg = jobs.traduzir_erro_scraper("context deadline exceeded", 1)
@@ -284,11 +284,12 @@ class TestCallbackProgressoVerificacao:
 # ---------------------------------------------------------------------------
 
 class TestRodarScraperComProgresso:
-    def test_sucesso_le_stdout_linha_a_linha(self):
-        # processo fake que imprime 3 linhas e sai com código 0
+    def test_sucesso_le_stderr_linha_a_linha(self):
+        # processo fake que imprime 3 linhas em stderr (é lá que o scraper real
+        # escreve seus logs de progresso) e sai com código 0
         comando = [
             sys.executable, "-c",
-            "import sys; [print(f'linha {i}') for i in range(3)]; sys.exit(0)",
+            "import sys; [print(f'linha {i}', file=sys.stderr) for i in range(3)]; sys.exit(0)",
         ]
         linhas_recebidas = []
         returncode, stderr = jobs.rodar_scraper_com_progresso(
@@ -318,15 +319,15 @@ class TestRodarScraperComProgresso:
         assert "erro fatal" in stderr
 
     def test_timeout_mata_o_processo_e_lanca(self):
-        # O timeout é checado dentro do loop de leitura do stdout, a cada linha —
+        # O timeout é checado dentro do loop de leitura do stderr, a cada linha —
         # que é como o scraper real se comporta (emite eventos de progresso o tempo
         # todo). Um processo que emite linhas continuamente e nunca termina deve ser
         # cortado pelo timeout e levantar TimeoutExpired.
         comando = [
             sys.executable, "-c",
-            "import time\n"
+            "import sys, time\n"
             "while True:\n"
-            "    print('progresso', flush=True)\n"
+            "    print('progresso', file=sys.stderr, flush=True)\n"
             "    time.sleep(0.05)",
         ]
         inicio = time.monotonic()

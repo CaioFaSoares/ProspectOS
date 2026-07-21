@@ -1,0 +1,25 @@
+# Compose LOCAL - pra testar na sua máquina antes de mandar pro servidor.
+# Sem proxy nem login (Basic Auth): porta publicada direto, é só pra teste.
+# Produção/Coolify usa o docker-compose.coolify.yml (com proxy + login).
+services:
+  prospectos:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    platform: linux/amd64 # o binário do scraper (gosom) só tem build linux-amd64
+    env_file: .env
+    environment:
+      PROSPECTOS_DATA_DIR: /data
+    volumes:
+      - prospectos-data:/data # leads.db, backups, saidas, logs, instagram/sessao
+    ports:
+      - "5050:5000"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/')" ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  prospectos-data:

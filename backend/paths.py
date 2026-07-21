@@ -33,7 +33,10 @@ if EMPACOTADO:
     DIR_DADOS = Path(os.environ.get("APPDATA", str(Path.home()))) / "ProspectOS"
 else:
     DIR_RECURSOS = _DIR_FONTE
-    DIR_DADOS = _DIR_FONTE
+    # PROSPECTOS_DATA_DIR permite apontar os dados graváveis pra fora da pasta de
+    # código (ex.: um volume Docker montado em /data) sem mudar de modo. Sem a
+    # variável, continua tudo na pasta do projeto como sempre foi.
+    DIR_DADOS = Path(os.environ.get("PROSPECTOS_DATA_DIR", str(_DIR_FONTE)))
 
 
 def caminho_recurso(*partes):

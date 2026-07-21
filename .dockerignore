@@ -1,0 +1,32 @@
+# Apps não usados no servidor (Windows-only)
+desktop/
+instalador/
+iniciar.bat
+
+# O Dockerfile baixa sua própria cópia do scraper Linux (pinada por versão) -
+# nunca usar o .exe do Windows nem um binário/Node que já esteja na pasta local.
+backend/*.exe
+backend/google-maps-scraper
+backend/node/
+
+# Build artifacts / deps (reinstalados dentro da imagem)
+**/node_modules
+frontend/dist
+**/__pycache__
+**/*.pyc
+
+# Dados locais de dev (o container usa o volume /data)
+backend/leads.db
+backend/backups/
+backend/saidas/
+backend/logs/
+backend/instagram/sessao/
+backend/instagram/comentarios/
+
+# Metadados que não pertencem à imagem
+.git
+.gitignore
+.tokensave
+.claude
+graphify-out
+*.md
